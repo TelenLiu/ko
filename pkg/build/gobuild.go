@@ -105,6 +105,8 @@ type gobuild struct {
 	annotations          map[string]string
 	user                 string
 	debug                bool
+	appDir               string
+	workDir              string
 	semaphore            *semaphore.Weighted
 
 	cache *layerCache
@@ -134,6 +136,7 @@ type gobuildOpener struct {
 	dir                  string
 	jobs                 int
 	debug                bool
+	appDir               string
 }
 
 func (gbo *gobuildOpener) Open() (Interface, error) {
@@ -169,6 +172,7 @@ func (gbo *gobuildOpener) Open() (Interface, error) {
 		annotations:          gbo.annotations,
 		dir:                  gbo.dir,
 		debug:                gbo.debug,
+		appDir:               gbo.appDir,
 		platformMatcher:      matcher,
 		cache: &layerCache{
 			buildToDiff: map[string]buildIDToDiffID{},
@@ -1055,7 +1059,10 @@ func (g *gobuild) buildOne(ctx context.Context, refStr string, base v1.Image, pl
 		},
 	})
 
-	appDir := "/ko-app"
+	appDir := g.appDir
+	if config.AppDir != "" {
+		appDir = config.AppDir
+	}
 	appFileName := appFilename(ref.Path())
 	appPath := path.Join(appDir, appFileName)
 
@@ -1101,7 +1108,7 @@ func (g *gobuild) buildOne(ctx context.Context, refStr string, base v1.Image, pl
 		}
 		defer os.RemoveAll(filepath.Dir(delveBinary))
 
-		delvePath = path.Join("/ko-app", filepath.Base(delveBinary))
+		delvePath = path.Join(appDir, filepath.Base(delveBinary))
 
 		// add layer with delve binary
 		delveLayer, err := g.cache.get(ctx, delveBinary, func() (v1.Layer, error) {
@@ -1149,15 +1156,15 @@ func (g *gobuild) buildOne(ctx context.Context, refStr string, base v1.Image, pl
 	cfg.Config.Entrypoint = []string{appPath}
 	cfg.Config.Cmd = nil
 	if platform.OS == "windows" {
-		appPath := `C:\ko-app\` + appFileName
+		appPath := filepath.Join(`C:`, appDir, appFileName)
 		if g.debug {
-			cfg.Config.Entrypoint = append([]string{"C:\\" + delvePath}, delveArgs...)
+			cfg.Config.Entrypoint = append([]string{filepath.Join(`C:\`, delvePath)}, delveArgs...)
 			cfg.Config.Entrypoint = append(cfg.Config.Entrypoint, appPath)
 		} else {
 			cfg.Config.Entrypoint = []string{appPath}
 		}
 
-		updatePath(cfg, `C:\ko-app`)
+		updatePath(cfg, filepath.Join(`C:\`, appDir))
 		cfg.Config.Env = append(cfg.Config.Env, `KO_DATA_PATH=C:\var\run\ko`)
 	} else {
 		if g.useDebugging(*platform) {

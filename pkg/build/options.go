@@ -197,9 +197,19 @@ func WithJobs(jobs int) Option {
 }
 
 // WithSBOMDir is a functional option for overriding the directory
+// where SBOMs are written.
 func WithSBOMDir(dir string) Option {
 	return func(gbo *gobuildOpener) error {
 		gbo.sbomDir = dir
+		return nil
+	}
+}
+
+// WithAppDir is a functional option for overriding the directory
+// in the container where the application binary will be placed.
+func WithAppDir(appDir string) Option {
+	return func(gbo *gobuildOpener) error {
+		gbo.appDir = appDir
 		return nil
 	}
 }

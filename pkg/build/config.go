@@ -96,4 +96,8 @@ type Config struct {
 	// extension: Linux capabilities to enable on the executable, applies
 	// to Linux targets.
 	LinuxCapabilities FlagArray `yaml:"linux_capabilities,omitempty"`
+
+	// AppDir is the directory in the container where the application binary will be placed.
+	// Defaults to "/ko-app".
+	AppDir string `yaml:"app_dir,omitempty"`
 }

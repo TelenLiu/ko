@@ -82,6 +82,10 @@ type BuildOptions struct {
 
 	// BuildConfigs stores the per-image build config from `.ko.yaml`.
 	BuildConfigs map[string]build.Config
+
+	// AppDir is the directory in the container where the application binary will be placed.
+	// Defaults to "/ko-app".
+	AppDir string
 }
 
 func AddBuildOptions(cmd *cobra.Command, bo *BuildOptions) {
@@ -114,6 +118,7 @@ func (bo *BuildOptions) LoadConfig() error {
 	}
 	// If omitted, use this base image.
 	v.SetDefault("defaultBaseImage", configDefaultBaseImage)
+	v.SetDefault("defaultAppDir", "/ko-app")
 	const configName = ".ko"
 
 	v.SetConfigName(configName) // .yaml is implicit
@@ -172,6 +177,10 @@ func (bo *BuildOptions) LoadConfig() error {
 			return fmt.Errorf("'defaultBaseImage': error parsing %q as image reference: %w", ref, err)
 		}
 		bo.BaseImage = ref
+	}
+
+	if bo.AppDir == "" {
+		bo.AppDir = v.GetString("defaultAppDir")
 	}
 
 	if len(bo.BaseImageOverrides) == 0 {
