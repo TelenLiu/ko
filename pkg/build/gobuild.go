@@ -137,6 +137,7 @@ type gobuildOpener struct {
 	jobs                 int
 	debug                bool
 	appDir               string
+	workDir              string
 }
 
 func (gbo *gobuildOpener) Open() (Interface, error) {
@@ -173,6 +174,7 @@ func (gbo *gobuildOpener) Open() (Interface, error) {
 		dir:                  gbo.dir,
 		debug:                gbo.debug,
 		appDir:               gbo.appDir,
+		workDir:              gbo.workDir,
 		platformMatcher:      matcher,
 		cache: &layerCache{
 			buildToDiff: map[string]buildIDToDiffID{},
@@ -1155,6 +1157,20 @@ func (g *gobuild) buildOne(ctx context.Context, refStr string, base v1.Image, pl
 	cfg = cfg.DeepCopy()
 	cfg.Config.Entrypoint = []string{appPath}
 	cfg.Config.Cmd = nil
+
+	// Set working directory with 3-level configuration support:
+	// 1. Environment variable KO_WORKDIR
+	// 2. YAML config WorkDir
+	// 3. Default value (g.workDir or "/")
+	workDir := "/"
+	if envWorkDir := os.Getenv("KO_WORKDIR"); envWorkDir != "" {
+		workDir = envWorkDir
+	} else if config.WorkDir != "" {
+		workDir = config.WorkDir
+	} else if g.workDir != "" {
+		workDir = g.workDir
+	}
+	cfg.Config.WorkingDir = workDir
 	if platform.OS == "windows" {
 		appPath := filepath.Join(`C:`, appDir, appFileName)
 		if g.debug {

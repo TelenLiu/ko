@@ -214,6 +214,15 @@ func WithAppDir(appDir string) Option {
 	}
 }
 
+// WithWorkDir is a functional option for overriding the working directory
+// in the container where the application will run.
+func WithWorkDir(workDir string) Option {
+	return func(gbo *gobuildOpener) error {
+		gbo.workDir = workDir
+		return nil
+	}
+}
+
 func WithDebugger() Option {
 	return func(gbo *gobuildOpener) error {
 		gbo.debug = true

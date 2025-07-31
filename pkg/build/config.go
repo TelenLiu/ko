@@ -100,4 +100,8 @@ type Config struct {
 	// AppDir is the directory in the container where the application binary will be placed.
 	// Defaults to "/ko-app".
 	AppDir string `yaml:"app_dir,omitempty"`
+
+	// WorkDir is the working directory in the container where the application will run.
+	// Defaults to "/".
+	WorkDir string `yaml:"work_dir,omitempty"`
 }
